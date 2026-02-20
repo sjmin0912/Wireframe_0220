@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Vibe Coding - Mission Dashboard</title>
+    <script src="js/data.js"></script> <!-- 데이터 불러오기 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* 배경 효과 */
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: radial-gradient(circle, #333 1px, transparent 1px);
+            opacity: 0.2;
+        }
+        
+        /* 카드 호버 효과 */
+        .mission-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px -10px rgba(108, 92, 231, 0.5);
+        }
+        
+        /* 잠긴 카드 스타일 */
+        .locked {
+            filter: grayscale(100%);
+            opacity: 0.5;
+            pointer-events: none; /* 클릭 방지 */
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body class="bg-[#13131F] min-h-screen text-white relative overflow-x-hidden">
+
+    <!-- 배경 그리드 -->
+    <div class="fixed inset-0 bg-grid pointer-events-none"></div>
+
+    <!-- 1. HEADER (네비게이션) -->
+    <nav class="fixed top-0 w-full bg-[#1E1E2E]/80 backdrop-blur-md border-b border-gray-700 z-50 px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-cube text-[#6C5CE7] text-2xl"></i>
+            <span class="font-bold text-xl tracking-tight">Vibe Coding</span>
+        </div>
+        
+        <!-- 유저 프로필 요약 -->
+        <div class="flex items-center gap-6">
+            <div class="flex flex-col items-end">
+                <span class="text-xs text-gray-400">Total Progress</span>
+                <div class="w-32 h-2 bg-gray-700 rounded-full mt-1 overflow-hidden">
+                    <!-- 진도율 바 (예시: 12%) -->
+                    <div class="h-full bg-gradient-to-r from-[#6C5CE7] to-[#00E676] w-[12%]"></div>
+                </div>
+            </div>
+            <a href="mypage.html" class="flex items-center gap-3 hover:bg-[#252535] px-3 py-1.5 rounded-lg transition">
+                <div class="text-right">
+                    <p class="text-sm font-bold">학생 이름</p>
+                    <p class="text-xs text-[#00E676]">Lv.1 비기너</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#6C5CE7] to-[#00E676] flex items-center justify-center font-bold text-white shadow-lg">
+                    MJ
+                </div>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 2. MAIN CONTENT -->
+    <main class="pt-28 pb-20 px-8 max-w-7xl mx-auto relative z-10">
+        
+        <header class="mb-12">
+            <h1 class="text-4xl font-extrabold mb-4">나의 미션 로드맵 🗺️</h1>
+            <p class="text-gray-400 text-lg">AI와 함께하는 8주간의 코딩 여행! 차근차근 정복해보세요.</p>
+        </header>
+
+        <!-- 미션 그리드 (확장 가능 구조) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <!-- Week 1: Active -->
+            <div class="mission-card bg-[#1E1E2E] rounded-2xl border border-[#6C5CE7] p-1 relative overflow-hidden transition-all duration-300 group">
+                <!-- 썸네일 영역 -->
+                <div class="h-48 bg-black rounded-xl relative overflow-hidden group-hover:opacity-90 transition">
+                    <!-- 게임 미리보기 이미지 (나중에 GIF로 교체 가능) -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#1E1E2E] to-transparent z-10"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-6xl animate-bounce">🏃💨</span>
+                    </div>
+                    <div class="absolute bottom-3 left-4 z-20">
+                        <span class="bg-[#6C5CE7] text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Week 1</span>
+                    </div>
+                </div>
+
+                <!-- 내용 영역 -->
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <h2 class="text-2xl font-bold text-white group-hover:text-[#6C5CE7] transition">장애물 피하기</h2>
+                        <!-- 별점 표시 (데이터 연동) -->
+                        <div class="flex text-yellow-500 text-sm gap-0.5" id="stars-week1">
+                            <i class="fa-regular fa-star"></i>
+                            <i class="fa-regular fa-star"></i>
+                            <i class="fa-regular fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm mb-6 leading-relaxed">
+                        내 캐릭터를 움직여서 하늘에서 떨어지는 장애물물을 피하세요! 
+                        이동, 충돌, 반복 개념을 배웁니다.
+                    </p>
+                    
+                    <!-- 액션 버튼 -->
+                    <a href="mission_intro.html" class="block w-full text-center py-3 bg-[#6C5CE7] hover:bg-[#5A4AD1] text-white rounded-xl font-bold transition shadow-lg shadow-[#6C5CE7]/30">
+                        <i class="fa-solid fa-play mr-2"></i> 미션 시작하기
+                    </a>
+                </div>
+            </div>
+
+            <!-- Week 2: Locked -->
+            <div class="mission-card locked bg-[#1E1E2E] rounded-2xl border border-gray-700 p-1 relative overflow-hidden">
+                <div class="h-48 bg-[#13131F] rounded-xl relative flex items-center justify-center">
+                    <i class="fa-solid fa-lock text-4xl text-gray-600"></i>
+                </div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <h2 class="text-2xl font-bold text-gray-500">스페이스 슈팅</h2>
+                        <span class="text-xs bg-gray-700 px-2 py-1 rounded text-gray-400">Locked</span>
+                    </div>
+                    <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+                        우주선을 타고 적을 맞춰보세요. 발사 기능과 점수 시스템을 배웁니다.
+                    </p>
+                    <button disabled class="block w-full text-center py-3 bg-gray-700 text-gray-400 rounded-xl font-bold cursor-not-allowed">
+                        1주차 완료 시 해제
+                    </button>
+                </div>
+            </div>
+
+            <!-- Week 3: Locked -->
+            <div class="mission-card locked bg-[#1E1E2E] rounded-2xl border border-gray-700 p-1 relative overflow-hidden">
+                <div class="h-48 bg-[#13131F] rounded-xl relative flex items-center justify-center">
+                    <i class="fa-solid fa-lock text-4xl text-gray-600"></i>
+                </div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <h2 class="text-2xl font-bold text-gray-500">리듬 마스터</h2>
+                        <span class="text-xs bg-gray-700 px-2 py-1 rounded text-gray-400">Locked</span>
+                    </div>
+                    <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+                        음악에 맞춰 노트를 입력하세요. 타이밍과 이벤트 처리를 배웁니다.
+                    </p>
+                    <button disabled class="block w-full text-center py-3 bg-gray-700 text-gray-400 rounded-xl font-bold cursor-not-allowed">
+                        2주차 완료 시 해제
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 스크립트: 데이터 연동 (별점 표시) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // data.js에 있는 loadProgress 함수 사용
+            if (typeof loadProgress === 'function') {
+                const data = loadProgress();
+                if (data && data.stars > 0) {
+                    const starContainer = document.getElementById('stars-week1');
+                    let html = '';
+                    // 획득한 별 (꽉 찬 별)
+                    for(let i=0; i<data.stars; i++) html += '<i class="fa-solid fa-star"></i>';
+                    // 빈 별
+                    for(let i=data.stars; i<3; i++) html += '<i class="fa-regular fa-star"></i>';
+                    
+                    starContainer.innerHTML = html;
+                    
+                    // 만약 1주차를 깼다면(별 3개), 2주차를 풀어주는 로직도 여기에 추가 가능
+                    // (이번 MVP에서는 생략)
+                }
+            }
+        });
+    </script>
+</body>
+</html>

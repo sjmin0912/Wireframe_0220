@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Vibe Coding - My Page</title>
+    <script src="js/data.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0F0F16 0%, #181824 100%);
+            font-family: 'Pretendard', sans-serif;
+            color: white;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        /* 프로필 카드 */
+        .profile-header {
+            background: rgba(30, 30, 46, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid #333;
+            border-radius: 24px;
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .avatar-ring {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            padding: 4px;
+            background: linear-gradient(135deg, #6C5CE7, #00E676);
+            position: relative;
+        }
+        
+        .avatar {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background: #1E1E2E;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 40px; border: 4px solid #0F0F16;
+        }
+
+        .level-badge {
+            position: absolute; bottom: 0; right: 0;
+            background: #6C5CE7; color: white;
+            font-weight: bold; font-size: 12px;
+            padding: 4px 12px; border-radius: 20px;
+            border: 2px solid #0F0F16;
+        }
+
+        /* 스탯 그리드 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .stat-item {
+            background: #13131F; border-radius: 16px; padding: 15px 25px;
+            border: 1px solid #333;
+        }
+
+        /* 프로젝트 그리드 */
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .project-card {
+            background: #1E1E2E; border: 1px solid #333; border-radius: 20px;
+            overflow: hidden; transition: all 0.3s;
+            position: relative;
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(108, 92, 231, 0.2);
+            border-color: #6C5CE7;
+        }
+
+        .card-thumb {
+            height: 180px; background: #000;
+            display: flex; justify-content: center; align-items: center;
+            border-bottom: 1px solid #333;
+            position: relative;
+        }
+        
+        /* 1주차 전용 썸네일 스타일 */
+        .thumb-dodger {
+            background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000 100%);
+        }
+        
+        .status-tag {
+            position: absolute; top: 15px; left: 15px;
+            font-size: 11px; font-weight: bold;
+            padding: 4px 10px; border-radius: 6px;
+            text-transform: uppercase;
+        }
+        .tag-done { background: rgba(0, 230, 118, 0.2); color: #00E676; border: 1px solid rgba(0, 230, 118, 0.3); }
+        .tag-wip { background: rgba(255, 212, 59, 0.2); color: #FFD43B; border: 1px solid rgba(255, 212, 59, 0.3); }
+        .tag-lock { background: rgba(255, 255, 255, 0.1); color: #aaa; }
+
+        .card-body { padding: 24px; }
+        
+        .progress-bar-bg { width: 100%; height: 6px; background: #333; border-radius: 3px; overflow: hidden; margin-top: 15px; }
+        .progress-bar-fill { height: 100%; background: #6C5CE7; width: 0%; transition: width 1s ease-out; }
+
+        /* 잠긴 카드 */
+        .locked-card { opacity: 0.5; filter: grayscale(100%); pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <!-- 네비게이션 -->
+    <nav class="flex justify-between items-center mb-8">
+        <a href="index.html" class="flex items-center gap-3 text-gray-400 hover:text-white transition">
+            <i class="fa-solid fa-arrow-left"></i> 대시보드로 돌아가기
+        </a>
+        <div class="flex gap-4">
+            <button class="w-10 h-10 rounded-full bg-[#1E1E2E] border border-gray-700 flex items-center justify-center hover:bg-[#252535]">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+            <button class="w-10 h-10 rounded-full bg-[#1E1E2E] border border-gray-700 flex items-center justify-center hover:bg-[#252535]">
+                <i class="fa-solid fa-bell"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 1. 프로필 영역 -->
+    <section class="profile-header">
+        <div class="avatar-ring">
+            <div class="avatar">🦊</div>
+            <div class="level-badge">LV. 2</div>
+        </div>
+        <div class="flex-1">
+            <h1 class="text-3xl font-bold mb-2">코드 마법사 <span class="text-[#6C5CE7]">김바이브</span></h1>
+            <p class="text-gray-400 text-sm mb-6">"오늘도 버그 없는 하루 되세요! 🚀"</p>
+            
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="text-xs text-gray-500 uppercase font-bold mb-1">Total Projects</div>
+                    <div class="text-2xl font-bold">1 <span class="text-sm text-gray-600 font-normal">/ 8</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="text-xs text-gray-500 uppercase font-bold mb-1">Total Stars</div>
+                    <div class="text-2xl font-bold text-[#FFD43B]">3 <span class="text-sm text-gray-600 font-normal">/ 24</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="text-xs text-gray-500 uppercase font-bold mb-1">Learning Streak</div>
+                    <div class="text-2xl font-bold text-[#00E676]">3 <span class="text-sm text-gray-600 font-normal">Days</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. 내 프로젝트 (포트폴리오) -->
+    <section>
+        <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-folder-open text-[#6C5CE7]"></i> 내 프로젝트
+        </h2>
+
+        <div class="project-grid">
+            
+            <!-- [Card 1] 1주차: 장애물 피하기 (상태에 따라 바뀜) -->
+            <div class="project-card" id="card-week1">
+                <div class="card-thumb thumb-dodger">
+                    <span class="status-tag tag-wip" id="status-week1">진행 중</span>
+                    <div class="text-center">
+                        <div class="text-4xl mb-2 animate-bounce">🏃💨</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-lg">장애물 피하기</h3>
+                        <div class="flex text-[#FFD43B] text-xs gap-0.5" id="stars-week1">
+                            <i class="fa-regular fa-star"></i>
+                            <i class="fa-regular fa-star"></i>
+                            <i class="fa-regular fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-4">플레이어를 움직여 떨어지는 장애물을 피하는 게임입니다.</p>
+                    
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+                        <span>진행률</span>
+                        <span id="percent-week1">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="bar-week1"></div>
+                    </div>
+
+                    <div class="flex gap-2 mt-6">
+                        <a href="workspace.html" class="flex-1 bg-[#6C5CE7] hover:bg-[#5A4AD1] text-white py-3 rounded-xl text-sm font-bold text-center transition">
+                            이어서 만들기
+                        </a>
+                        <button class="px-3 bg-[#252535] hover:bg-[#333] border border-gray-600 rounded-xl text-gray-400 hover:text-white transition" title="설정">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- [Card 2] 2주차: 슈팅 게임 (잠김) -->
+            <div class="project-card locked-card">
+                <div class="card-thumb">
+                    <span class="status-tag tag-lock"><i class="fa-solid fa-lock mr-1"></i> Locked</span>
+                    <i class="fa-solid fa-rocket text-4xl text-gray-700"></i>
+                </div>
+                <div class="card-body">
+                    <h3 class="font-bold text-lg text-gray-500 mb-2">스페이스 슈팅</h3>
+                    <p class="text-xs text-gray-600 mb-4">우주선을 타고 적들을 물리치는 슈팅 게임입니다.</p>
+                    <div class="w-full bg-[#252535] text-gray-600 py-3 rounded-xl text-sm font-bold text-center cursor-not-allowed">
+                        1주차 완료 시 해제
+                    </div>
+                </div>
+            </div>
+
+            <!-- [Card 3] 추가용 (빈 슬롯) -->
+            <div class="project-card" style="border-style: dashed; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; cursor: pointer; opacity: 0.5;" onclick="alert('새로운 자유 프로젝트는 8주차에 열립니다!')">
+                <div class="w-16 h-16 rounded-full bg-[#252535] flex items-center justify-center text-gray-400 mb-4">
+                    <i class="fa-solid fa-plus text-2xl"></i>
+                </div>
+                <p class="text-gray-400 font-bold">자유 프로젝트</p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- 스크립트: 데이터 연동 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. js/data.js가 있는지 확인 (없으면 더미 데이터 사용)
+            let savedData = null;
+            
+            if (typeof loadProgress === 'function') {
+                savedData = loadProgress(); // 로컬스토리지에서 불러오기
+            } else {
+                console.warn("data.js not found. Using dummy data.");
+            }
+
+            // 2. 데이터가 있다면 UI 업데이트
+            if (savedData) {
+                // (1) 상태 뱃지 업데이트
+                const statusTag = document.getElementById('status-week1');
+                if (savedData.currentLevel >= 4) {
+                    statusTag.className = "status-tag tag-done";
+                    statusTag.innerText = "완료함";
+                } else {
+                    statusTag.className = "status-tag tag-wip";
+                    statusTag.innerText = "진행 중";
+                }
+
+                // (2) 별점 업데이트
+                const starContainer = document.getElementById('stars-week1');
+                let starHTML = '';
+                for(let i=0; i<3; i++) {
+                    if(i < savedData.stars) starHTML += '<i class="fa-solid fa-star"></i>';
+                    else starHTML += '<i class="fa-regular fa-star"></i>';
+                }
+                starContainer.innerHTML = starHTML;
+
+                // (3) 진행률 바 업데이트 (4단계 기준)
+                const percent = Math.min(100, Math.round((savedData.currentLevel / 4) * 100));
+                document.getElementById('percent-week1').innerText = percent + "%";
+                document.getElementById('bar-week1').style.width = percent + "%";
+            }
+        });
+    </script>
+</body>
+</html>

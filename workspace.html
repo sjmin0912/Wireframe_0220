@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Coding - 바이브 코딩</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            background-color: #13131F; 
+            color: white; 
+            margin: 0;
+            padding: 0;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1E1E2E; }
+        ::-webkit-scrollbar-thumb { background: #3F3F5F; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6C5CE7; }
+
+        .custom-scrollbar { scrollbar-color: #3F3F5F #1E1E2E; }
+
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #0F0F16;
+        }
+
+        .bubble {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            max-width: 85%;
+            word-break: break-word;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bubble-ai {
+            align-self: flex-start;
+            background: #252535;
+            color: #E0E0E0;
+            border-left: 3px solid #6C5CE7;
+        }
+
+        .bubble-user {
+            align-self: flex-end;
+            background: #6C5CE7;
+            color: white;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: #000;
+            border-radius: 10px;
+            width: 300px !important;
+            height: 400px !important;
+            border: 2px solid #6C5CE7;
+            box-shadow: 0 0 20px rgba(108, 92, 231, 0.3);
+            cursor: crosshair;
+            outline: none;
+        }
+
+        #gameCanvas:focus {
+            border-color: #00E676;
+            box-shadow: 0 0 30px rgba(0, 230, 118, 0.5);
+        }
+
+        .layout-horizontal {
+            display: grid;
+            grid-template-columns: 320px 1fr 1fr;
+            gap: 0;
+            height: calc(100vh - 64px);
+        }
+
+        .game-controls {
+            position: fixed;
+            left: -9999px;
+            top: -9999px;
+            visibility: hidden;
+        }
+
+        .stage-title {
+            font-size: clamp(14px, 3.5vw, 18px);
+            font-weight: 700;
+            white-space: normal;
+            line-height: 1.3;
+        }
+
+        /* 스테이지 탭 - 작은 원형 */
+        .step-nav {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+            overflow-x: auto;
+            justify-content: center;
+        }
+
+        .step-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #252535;
+            color: #94a3b8;
+            border: 2px solid #3f4652;
+            flex-shrink: 0;
+        }
+
+        .step-badge:hover {
+            transform: scale(1.1);
+        }
+
+        .step-badge.active {
+            background: #6C5CE7;
+            color: white;
+            border-color: #6C5CE7;
+            box-shadow: 0 0 12px rgba(108, 92, 231, 0.6);
+        }
+
+        .step-badge.completed {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex: 1;
+            padding: 24px;
+            background: #0F0F16;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            padding: 12px;
+            background: #0f172a;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            border: 1px solid #334155;
+        }
+
+        /* 게임 버튼 UI */
+        .game-button-group {
+            display: flex;
+            gap: 8px;
+            background: #1E1E2E;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+
+        .game-button {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            min-width: 70px;
+            justify-content: center;
+        }
+
+        .game-button i {
+            font-size: 10px;
+        }
+
+        .game-button.play {
+            background: linear-gradient(135deg, #00E676 0%, #00C865 100%);
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 230, 118, 0.3);
+        }
+
+        .game-button.play:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 230, 118, 0.4);
+        }
+
+        .game-button.play:active {
+            transform: translateY(0);
+        }
+
+        .game-button.stop {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+
+        .game-button.stop:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
+        }
+
+        .game-button.stop:active {
+            transform: translateY(0);
+        }
+
+        .game-button.reset {
+            background: linear-gradient(135deg, #FFB800 0%, #FFA500 100%);
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(255, 184, 0, 0.3);
+        }
+
+        .game-button.reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 184, 0, 0.4);
+        }
+
+        .game-button.reset:active {
+            transform: translateY(0);
+        }
+
+        /* 힌트 탭 */
+        .hint-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .hint-tab {
+            flex: 1;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #252535;
+            color: #94a3b8;
+            border: 1px solid #3f4652;
+            text-align: center;
+            position: relative;
+        }
+
+        .hint-tab.active {
+            background: #6C5CE7;
+            color: white;
+            border-color: #6C5CE7;
+        }
+
+        .hint-tab.locked::after {
+            content: ' 🔒';
+            font-size: 10px;
+        }
+
+        /* 힌트 콘텐츠 */
+        #hintContent {
+            background: #1A1A22;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 120px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hint-locked-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            border-radius: 8px;
+            cursor: not-allowed;
+        }
+
+        .hint-locked-content {
+            text-align: center;
+        }
+
+        .hint-locked-content .lock-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            animation: bounce 2s infinite;
+        }
+
+        .hint-locked-content p {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .hint-locked-content .unlock-btn {
+            background: #6C5CE7;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .hint-locked-content .unlock-btn:hover {
+            background: #5A4AD1;
+            transform: scale(1.05);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* ✅ 수정된 달성도 스타일 */
+        .checkpoint-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .checkpoint-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            background: #1E1E2E;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .checkpoint-item.completed {
+            background: linear-gradient(90deg, #10b981 0%, rgba(16, 185, 129, 0.2) 100%);
+            border-color: #10b981;
+        }
+
+        .checkpoint-dot {
+            font-size: 18px;
+            min-width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .checkpoint-info {
+            flex: 1;
+        }
+
+        .checkpoint-info h4 {
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            margin: 0;
+        }
+
+        .checkpoint-info p {
+            font-size: 9px;
+            color: #94a3b8;
+            margin: 2px 0 0 0;
+        }
+
+        .checkpoint-item.completed .checkpoint-info p {
+            color: #10b981;
+        }
+
+        .save-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            animation: slideUp 0.5s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 네비게이션 버튼 */
+        .nav-buttons {
+            display: flex;
+            gap: 3px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            py: 2;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            padding: 8px 12px;
+        }
+
+        .nav-btn.prev-next {
+            background: #252535;
+            color: #94a3b8;
+        }
+
+        .nav-btn.prev-next:hover:not(:disabled) {
+            background: #353545;
+        }
+
+        .nav-btn.prev-next:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .nav-btn.save {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .nav-btn.save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-gray-200">
+
+    <!-- HEADER -->
+    <header class="h-16 bg-[#1E1E2E] border-b border-gray-700 flex items-center justify-between px-6 shrink-0 z-20 shadow-md">
+        <div class="flex items-center gap-5">
+            <div class="flex items-center gap-2 text-[#6C5CE7]">
+                <i class="fa-solid fa-cube text-2xl"></i>
+                <span class="font-bold text-lg tracking-tight">Vibe Coding</span>
+            </div>
+            <div class="h-5 w-px bg-gray-600"></div>
+            <div>
+                <span class="text-xs text-gray-400 block leading-none mb-1">Challenge</span>
+                <span class="text-sm text-white font-bold">피하기 게임 만들기</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 bg-[#13131F] px-4 py-2 rounded-lg border border-gray-700">
+                <i class="fa-solid fa-star text-yellow-400"></i>
+                <span class="text-sm font-bold text-gray-300"><span class="text-white" id="ratingDisplay">4.8</span>/5.0</span>
+            </div>
+            
+            <button onclick="saveProgress()" class="bg-[#2D2D3F] hover:bg-[#3D3D4F] text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                <i class="fa-solid fa-floppy-disk"></i> 저장
+            </button>
+            
+            <button onclick="goToMyPage()" class="bg-[#2D2D3F] hover:bg-[#3D3D4F] text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                <i class="fa-solid fa-user"></i> 마이페이지
+            </button>
+            
+            <button onclick="goToHome()" class="bg-[#2D2D3F] hover:bg-[#3D3D4F] text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2">
+                <i class="fa-solid fa-sign-out-alt"></i> 나가기
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE -->
+    <div id="workspace" class="flex-1 flex overflow-hidden layout-horizontal">
+        
+        <!-- LEFT PANEL: 스테이지 선택 & 가이드 -->
+        <aside class="w-[320px] bg-[#1E1E2E] border-r border-gray-700 flex flex-col z-10">
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+                
+                <!-- 스테이지 선택 - 작은 원형 -->
+                <div class="mb-6">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 block">📍 스테이지</span>
+                    <div class="step-nav">
+                        <div class="step-badge active" onclick="goToStage(0)" id="step-badge-0" title="Preview">P</div>
+                        <div class="step-badge" onclick="goToStage(1)" id="step-badge-1" title="Stage 1">1</div>
+                        <div class="step-badge" onclick="goToStage(2)" id="step-badge-2" title="Stage 2">2</div>
+                        <div class="step-badge" onclick="goToStage(3)" id="step-badge-3" title="Stage 3">3</div>
+                    </div>
+                </div>
+
+                <!-- 미션 설명 -->
+                <div class="mb-6">
+                    <span class="text-[#6C5CE7] font-extrabold text-[9px] tracking-widest uppercase mb-1 block">🎮 미션</span>
+                    <h1 class="stage-title text-white mb-2" id="stageTitle">프롬프트 작성법</h1>
+                    <p class="text-gray-400 text-xs leading-relaxed" id="stageDesc">
+                        프롬프트를 잘 작성하는 방법을 배워봐요!
+                    </p>
+                </div>
+
+                <!-- 프롬프트 가이드 -->
+                <div class="mb-6">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">📝 프롬프트 작성법</span>
+                    <div class="bg-[#252535] rounded-lg border border-[#6C5CE7]/30 p-3 text-xs text-gray-300 leading-relaxed" id="promptGuide">
+                        <!-- 동적으로 생성됨 -->
+                    </div>
+                </div>
+
+                <!-- 힌트 시스템 -->
+                <div class="space-y-2">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">💭 단계별 힌트</span>
+                    
+                    <div class="hint-tabs" id="hintTabs">
+                        <!-- 동적으로 생성됨 -->
+                    </div>
+
+                    <!-- Hint Content -->
+                    <div id="hintContent" class="bg-[#1A1A22] rounded-lg border border-gray-700 p-4 min-h-[120px]">
+                        <!-- 동적으로 생성됨 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 이전/다음 버튼 또는 저장 버튼 -->
+            <div class="p-5 border-t border-gray-700">
+                <div class="nav-buttons" id="navButtonsContainer">
+                    <button class="nav-btn prev-next" onclick="previousStage()" id="prevBtn">← 이전</button>
+                    <button class="nav-btn prev-next" onclick="nextStage()" id="nextBtn" style="flex: 2;">다음 →</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CENTER & RIGHT: 채팅 + 게임 -->
+        <div id="mainContent" class="flex-1 flex overflow-hidden">
+
+            <!-- CENTER PANEL: 채팅 -->
+            <main class="flex-1 flex flex-col relative bg-[#13131F]">
+                <div id="chatHistory" class="chat-area custom-scrollbar">
+                    <div class="bubble bubble-ai">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i class="fa-solid fa-robot text-[#6C5CE7]"></i> <span class="text-xs font-bold text-[#6C5CE7]">Vibe Tutor</span>
+                        </div>
+                        안녕! 👋 나는 너의 AI 파트너 Vibe Tutor야! 🤖<br><br>
+                        함께 멋진 게임을 만들어보자! 🎮<br><br>
+                        <strong>우선 좋은 프롬프트를 작성하는 방법을 배우자!</strong><br>
+                        왼쪽의 단계별 힌트를 참고해서<br>
+                        프롬프트 작성의 기초를 배워보고,<br>
+                        Stage 1부터 실제로 게임을 만들어보자! ✨
+                    </div>
+                </div>
+
+                <div class="bg-[#1E1E2E] p-5 border-t border-gray-700">
+                    <div class="relative">
+                        <textarea id="promptInput" 
+                            class="w-full bg-[#13131F] border border-gray-600 rounded-lg p-3 text-white text-sm resize-none outline-none focus:border-[#6C5CE7] transition h-20"
+                            placeholder="Stage 1부터 프롬프트를 입력해봐... (Shift+Enter: 전송)"
+                            onkeydown="checkEnter(event)"></textarea>
+                        <button onclick="handleSend()" class="absolute bottom-3 right-3 bg-[#6C5CE7] hover:bg-[#5A4AD1] text-white w-9 h-9 rounded-lg flex items-center justify-center transition shadow-lg text-sm">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </main>
+
+            <!-- RIGHT PANEL: 게임 + 달성도 -->
+            <aside class="flex-1 bg-[#1E1E2E] border-l border-gray-700 flex flex-col z-10">
+                
+                <!-- 게임 화면 -->
+                <div class="flex-1 flex flex-col bg-black relative overflow-hidden items-center justify-center border-b border-gray-700 shadow-2xl">
+                    <div class="game-container">
+                        <div class="game-info">
+                            <span>⏱ <span id="gameTime">30</span>s</span>
+                            <span>⭐ <span id="gameScore">0</span></span>
+                        </div>
+                        <canvas id="gameCanvas" width="300" height="400"></canvas>
+                        
+                        <div class="game-controls">
+                            <button id="gameStartBtn" onclick="startGame()">게임 실행</button>
+                            <button id="gameResetBtn" onclick="resetGame()">리셋</button>
+                            <button id="gameStopBtn" onclick="stopGame()">정지</button>
+                        </div>
+
+                        <!-- 게임 컨트롤 버튼 - 새 UI -->
+                        <div class="game-button-group" id="gameButtonContainer" style="display: none;">
+                            <button class="game-button play" onclick="startGame()" title="게임 시작">
+                                <i class="fa-solid fa-play"></i> 실행
+                            </button>
+                            <button class="game-button stop" onclick="stopGame()" title="게임 일시정지">
+                                <i class="fa-solid fa-pause"></i> 멈춤
+                            </button>
+                            <button class="game-button reset" onclick="resetGame()" title="게임 리셋">
+                                <i class="fa-solid fa-rotate-right"></i> 리셋
+                            </button>
+                        </div>
+
+                        <div class="text-center">
+                            <p class="text-[10px] text-gray-500 mt-2" id="gameHint">프롬프트를 입력해서 게임을 만들어봐! 🎮</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 달성도 -->
+                <div class="w-full bg-[#252535] flex flex-col">
+                    <div class="px-5 py-3 border-b border-gray-700 bg-[#1E1E2E]">
+                        <h3 class="font-bold text-xs text-white flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-[#6C5CE7]"></i> 달성도
+                        </h3>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-4 custom-scrollbar checkpoint-list" id="checklistContainer">
+                        <!-- 동적으로 생성됨 -->
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <script>
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.beginPath();
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                this.closePath();
+            };
+        }
+
+        // ========================================
+        // 게임 클래스
+        // ========================================
+
+        class GameHero {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.hero = {
+                    x: canvas.width / 2 - 25,
+                    y: canvas.height - 80,
+                    width: 50,
+                    height: 50,
+                    color: '#4a9eff',
+                    speed: 8
+                };
+                this.keys = { left: false, right: false };
+                this.isRunning = false;
+                this.animationId = null;
+                this.setupKeyboardEvents();
+            }
+            
+            setupKeyboardEvents() {
+                this.keydownHandler = (e) => {
+                    if (e.key === 'ArrowLeft') {
+                        this.keys.left = true;
+                        e.preventDefault();
+                        updateCheckpoint('leftright');
+                    }
+                    if (e.key === 'ArrowRight') {
+                        this.keys.right = true;
+                        e.preventDefault();
+                        updateCheckpoint('leftright');
+                    }
+                };
+                
+                this.keyupHandler = (e) => {
+                    if (e.key === 'ArrowLeft') this.keys.left = false;
+                    if (e.key === 'ArrowRight') this.keys.right = false;
+                };
+                
+                window.addEventListener('keydown', this.keydownHandler);
+                window.addEventListener('keyup', this.keyupHandler);
+            }
+            
+            drawHero() {
+                const ctx = this.ctx;
+                const h = this.hero;
+                
+                ctx.fillStyle = h.color;
+                ctx.roundRect(h.x, h.y, h.width, h.height, 10);
+                ctx.fill();
+                
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(h.x + 15, h.y + 18, 8, 0, Math.PI * 2);
+                ctx.arc(h.x + 35, h.y + 18, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#1a1a2e';
+                ctx.beginPath();
+                ctx.arc(h.x + 15, h.y + 18, 4, 0, Math.PI * 2);
+                ctx.arc(h.x + 35, h.y + 18, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            moveHero() {
+                if (this.keys.left && this.hero.x > 0) {
+                    this.hero.x -= this.hero.speed;
+                }
+                if (this.keys.right && this.hero.x < this.canvas.width - this.hero.width) {
+                    this.hero.x += this.hero.speed;
+                }
+            }
+            
+            run() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.drawHero();
+            }
+
+            gameLoop() {
+                if (!this.isRunning) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.moveHero();
+                this.drawHero();
+                this.animationId = requestAnimationFrame(() => this.gameLoop());
+            }
+
+            start() {
+                this.isRunning = true;
+                this.gameLoop();
+            }
+
+            stop() {
+                this.isRunning = false;
+                if (this.animationId) cancelAnimationFrame(this.animationId);
+            }
+
+            destroy() {
+                this.stop();
+                window.removeEventListener('keydown', this.keydownHandler);
+                window.removeEventListener('keyup', this.keyupHandler);
+            }
+        }
+
+        class GameWithObstacles extends GameHero {
+            constructor(canvas) {
+                super(canvas);
+                this.obstacles = [];
+                this.frameCount = 0;
+                this.score = 0;
+                this.obstacleConfig = {
+                    width: 40,
+                    height: 40,
+                    speed: 4,
+                    spawnRate: 60,
+                    color: '#ff6b6b'
+                };
+            }
+
+            spawnObstacle() {
+                this.frameCount++;
+                if (this.frameCount >= this.obstacleConfig.spawnRate) {
+                    this.frameCount = 0;
+                    const obs = {
+                        x: Math.random() * (this.canvas.width - this.obstacleConfig.width),
+                        y: -this.obstacleConfig.height,
+                        width: this.obstacleConfig.width,
+                        height: this.obstacleConfig.height,
+                        speed: this.obstacleConfig.speed + Math.random() * 2
+                    };
+                    this.obstacles.push(obs);
+                    updateCheckpoint('obstacle');
+                }
+            }
+
+            updateObstacles() {
+                for (let i = this.obstacles.length - 1; i >= 0; i--) {
+                    this.obstacles[i].y += this.obstacles[i].speed;
+                    if (this.obstacles[i].y > this.canvas.height) {
+                        this.obstacles.splice(i, 1);
+                        this.score += 10;
+                        document.getElementById('gameScore').textContent = this.score;
+                    }
+                }
+            }
+
+            drawObstacles() {
+                const ctx = this.ctx;
+                ctx.fillStyle = this.obstacleConfig.color;
+                
+                this.obstacles.forEach(obs => {
+                    ctx.roundRect(obs.x, obs.y, obs.width, obs.height, 8);
+                    ctx.fill();
+                });
+            }
+
+            gameLoop() {
+                if (!this.isRunning) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.moveHero();
+                this.spawnObstacle();
+                this.updateObstacles();
+                this.drawHero();
+                this.drawObstacles();
+                this.animationId = requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+
+        class GameComplete extends GameWithObstacles {
+            constructor(canvas) {
+                super(canvas);
+                this.gameTime = 30;
+                this.gameEnded = false;
+                this.timerInterval = null;
+            }
+
+            checkCollision(rect1, rect2) {
+                return rect1.x < rect2.x + rect2.width &&
+                       rect1.x + rect1.width > rect2.x &&
+                       rect1.y < rect2.y + rect2.height &&
+                       rect1.y + rect1.height > rect2.y;
+            }
+
+            updateObstacles() {
+                for (let i = this.obstacles.length - 1; i >= 0; i--) {
+                    this.obstacles[i].y += this.obstacles[i].speed;
+                    
+                    if (this.checkCollision(this.hero, this.obstacles[i])) {
+                        this.gameOver();
+                        return;
+                    }
+                    
+                    if (this.obstacles[i].y > this.canvas.height) {
+                        this.obstacles.splice(i, 1);
+                        this.score += 10;
+                        document.getElementById('gameScore').textContent = this.score;
+                    }
+                }
+            }
+
+            drawUI() {
+                const ctx = this.ctx;
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText(`${this.gameTime}s`, 10, 30);
+                ctx.fillText(`${this.score}점`, this.canvas.width - 80, 30);
+            }
+
+            gameOver() {
+                this.isRunning = false;
+                this.gameEnded = true;
+                clearInterval(this.timerInterval);
+                if (this.animationId) cancelAnimationFrame(this.animationId);
+                
+                const ctx = this.ctx;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 32px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('💥 게임오버!', this.canvas.width / 2, this.canvas.height / 2 - 30);
+            }
+
+            gameClear() {
+                this.isRunning = false;
+                this.gameEnded = true;
+                clearInterval(this.timerInterval);
+                if (this.animationId) cancelAnimationFrame(this.animationId);
+                
+                const ctx = this.ctx;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                ctx.fillStyle = '#51cf66';
+                ctx.font = 'bold 32px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('🎉 클리어!', this.canvas.width / 2, this.canvas.height / 2 - 30);
+            }
+
+            gameLoop() {
+                if (!this.isRunning || this.gameEnded) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.moveHero();
+                this.spawnObstacle();
+                this.updateObstacles();
+                this.drawHero();
+                this.drawObstacles();
+                this.drawUI();
+                this.animationId = requestAnimationFrame(() => this.gameLoop());
+            }
+
+            start() {
+                this.isRunning = true;
+                this.gameEnded = false;
+                this.gameTime = 30;
+                this.score = 0;
+                this.obstacles = [];
+                this.hero.x = this.canvas.width / 2 - 25;
+                
+                document.getElementById('gameTime').textContent = 30;
+                document.getElementById('gameScore').textContent = 0;
+                
+                this.timerInterval = setInterval(() => {
+                    this.gameTime--;
+                    document.getElementById('gameTime').textContent = this.gameTime;
+                    if (this.gameTime <= 0) {
+                        this.gameClear();
+                    }
+                }, 1000);
+                
+                this.gameLoop();
+            }
+        }
+
+        // ========================================
+        // 스테이지 & UI 관리
+        // ========================================
+        
+        let currentStage = 0;
+        let gameInstance = null;
+        const canvas = document.getElementById('gameCanvas');
+        
+        let completedCheckpoints = {
+            leftright: false,
+            obstacle: false,
+            collision: false
+        };
+
+        let unlockedHints = {
+            0: [true, false, false],
+            1: [true, false, false],
+            2: [true, false, false],
+            3: [true, false, false]
+        };
+
+        const stages = [
+            {
+                title: '프롬프트 작성법 (Preview)',
+                desc: '좋은 프롬프트를 작성하는 기초를 배워봐요!',
+                promptGuide: `<strong class="text-[#6C5CE7]">프롬프트란?</strong><br>
+                    AI에게 요청하는 명령어입니다! 🤖<br><br>
+                    <strong class="text-[#FFB800]">좋은 프롬프트의 특징:</strong><br>
+                    • 명확하고 구체적이어야 해요<br>
+                    • 무엇을 원하는지 명시하세요<br>
+                    • 세부 사항을 포함하세요`,
+                hintTabs: ['핵심', '구조', '예시'],
+                hints: [
+                    {
+                        level: '핵심',
+                        steps: [
+                            '💡 프롬프트는 AI와의 대화예요',
+                            '💡 명확할수록 좋은 결과가 나와요',
+                            '💡 "무엇을", "어떻게"를 명시하세요'
+                        ]
+                    },
+                    {
+                        level: '구조',
+                        steps: [
+                            '📋 역할 설정: "너는 게임 개발자야"',
+                            '📋 작업 요청: "게임을 만들어줄래?"',
+                            '📋 세부 지시: "색상은..., 크기는...의"'
+                        ]
+                    },
+                    {
+                        level: '예시',
+                        steps: [
+                            '✨ 좋은 예시: "파란색 50x50 캐릭터를 만들고 화살표 키로 움직이게 해줄래?"',
+                            '❌ 나쁜 예시: "게임 만들어줘"',
+                            '⭐ 팁: 구체적일수록 정확한 결과를 얻어요!'
+                        ]
+                    }
+                ],
+                isPreview: true
+            },
+            {
+                title: 'Step 1 : 좌/우 이동',
+                desc: '캐릭터를 화살표 키로 움직이게 만들어봐요!',
+                promptGuide: `<strong class="text-[#6C5CE7]">Stage 1 프롬프트 팁:</strong><br>
+                    "캐릭터", "화살표", "좌우 이동" 같은 키워드를 포함하세요!<br><br>
+                    <span class="text-[#FFB800]">예시:</span> "캐릭터를 만들고 화살표 키로 좌우로 움직이게 해줄래?"`,
+                hintTabs: ['기초', '응용', '심화'],
+                hints: [
+                    {
+                        level: '기초',
+                        steps: [
+                            '💡 "캐릭터" 또는 "플레이어"를 만드는 것부터 시작',
+                            '💡 "화살표 키"와 "좌우 이동"을 함께 요청하세요',
+                            '💡 색상과 크기를 구체적으로 말해봐요'
+                        ]
+                    },
+                    {
+                        level: '응용',
+                        steps: [
+                            '🚀 "← → 키로 움직여야 해" 같은 구체적 표현 사용',
+                            '🚀 "파란색" 대신 "#4a9eff" 같은 색상 코드 사용',
+                            '🚀 "화면 밖으로 나가면 안 돼" 같은 제약도 명시해봐'
+                        ]
+                    },
+                    {
+                        level: '심화',
+                        steps: [
+                            '⭐ "속도는 8 정도로"처럼 세부 수치 추가',
+                            '⭐ "canvas에 그려줄래?"같이 기술 요청도 가능',
+                            '⭐ 이전 요청을 기반으로 확장: "이전 캐릭터에 추가로..."'
+                        ]
+                    }
+                ],
+                isPreview: false
+            },
+            {
+                title: ' Step 2 : 장애물 생성',
+                desc: '위에서 떨어지는 장애물을 추가해봐요!',
+                promptGuide: `<strong class="text-[#6C5CE7]">Stage 2 프롬프트 팁:</strong><br>
+                    "이전", "추가로", "장애물", "떨어지는" 등의 키워드 사용<br><br>
+                    <span class="text-[#FFB800]">예시:</span> "이전 게임에 추가로, 빨간 장애물이 위에서 떨어지게 해줄래?"`,
+                hintTabs: ['기초', '응용', '심화'],
+                hints: [
+                    {
+                        level: '기초',
+                        steps: [
+                            '💡 "이전" 요청을 기반으로 시작해서 기존 기능 유지',
+                            '💡 "추가로", "더해서" 같은 표현으로 명확하게',
+                            '💡 "떨어지는", "내려오는", "생성" 같은 동작 동사 사용'
+                        ]
+                    },
+                    {
+                        level: '응용',
+                        steps: [
+                            '🚀 "일정한 간격마다" 또는 "주기적으로" 생성 요청',
+                            '🚀 빨간색 또는 "#ff6b6b" 같이 색상 명시',
+                            '🚀 "속도는 4 정도" 같은 속성 지정'
+                        ]
+                    },
+                    {
+                        level: '심화',
+                        steps: [
+                            '⭐ "화면 밖을 나가면 제거해줄래?" 같은 상태 관리',
+                            '⭐ "피하는 개수를 세어줄래?" 같이 점수 시스템 언급',
+                            '⭐ "배열로 관리" 같은 기술 힌트도 줄 수 있어요'
+                        ]
+                    }
+                ],
+                isPreview: false
+            },
+            {
+                title: ' Step 3 : 충돌 조건 만들기',
+                desc: '충돌 감지와 타이머를 추가해 완성하세요!',
+                promptGuide: `<strong class="text-[#6C5CE7]">Stage 3 프롬프트 팁:</strong><br>
+                    "충돌", "닿다", "타이머", "게임오버" 등 사용<br><br>
+                    <span class="text-[#FFB800]">예시:</span> "캐릭터와 장애물이 닿으면 게임 오버가 되게 해줄래?"`,
+                hintTabs: ['기초', '응용', '심화'],
+                hints: [
+                    {
+                        level: '기초',
+                        steps: [
+                            '💡 "충돌", "닿다", "collision" 같은 감지 용어 사용',
+                            '💡 "게임 오버", "끝나다" 같은 상태 변화 표현',
+                            '💡 "타이머", "시간 제한", "30초" 같은 시간 관련 표현'
+                        ]
+                    },
+                    {
+                        level: '응용',
+                        steps: [
+                            '🚀 "30초 동안 생존하면 클리어" 같은 승리 조건 명시',
+                            '🚀 "피한 개수 × 10점" 같은 점수 계산법 설명',
+                            '🚀 "충돌하면 게임오버 텍스트를 보여줄래?" 같은 UI 요청'
+                        ]
+                    },
+                    {
+                        level: '심화',
+                        steps: [
+                            '⭐ "AABB 충돌 감지" 같은 기술 제안 가능',
+                            '⭐ 여러 기능을 조합: "충돌감지 + 타이머 + 점수 + UI"',
+                            '⭐ 세부 튜닝: "속도 조정", "생성 빈도 변경" 등'
+                        ]
+                    }
+                ],
+                isPreview: false
+            }
+        ];
+
+        function updateNavButtons() {
+            const container = document.getElementById('navButtonsContainer');
+            const isLastStage = currentStage === stages.length - 1;
+            
+            if (isLastStage) {
+                container.innerHTML = `
+                    <button class="nav-btn prev-next" onclick="previousStage()" id="prevBtn">← 이전</button>
+                    <button class="nav-btn save" onclick="saveProgress()" style="flex: 2;">
+                        <i class="fa-solid fa-floppy-disk" style="margin-right: 4px;"></i> 완료! 저장하기
+                    </button>
+                `;
+            } else {
+                container.innerHTML = `
+                    <button class="nav-btn prev-next" onclick="previousStage()" id="prevBtn">← 이전</button>
+                    <button class="nav-btn prev-next" onclick="nextStage()" id="nextBtn" style="flex: 2;">다음 →</button>
+                `;
+            }
+            
+            // 이전 버튼 비활성화
+            const prevBtn = container.querySelector('.nav-btn:first-child');
+            if (currentStage === 0) {
+                prevBtn.disabled = true;
+            }
+        }
+
+        function initializeStage(stageIdx) {
+            if (gameInstance) {
+                gameInstance.destroy();
+            }
+
+            const stage = stages[stageIdx];
+            document.getElementById('stageTitle').textContent = `🎯 ${stage.title}`;
+            document.getElementById('stageDesc').textContent = stage.desc;
+            document.getElementById('promptGuide').innerHTML = stage.promptGuide;
+
+            // 힌트 탭 생성 (잠금 상태 포함)
+            const hintTabsContainer = document.getElementById('hintTabs');
+            hintTabsContainer.innerHTML = stage.hintTabs.map((tab, idx) => {
+                const isLocked = !unlockedHints[stageIdx][idx];
+                return `
+                    <div class="hint-tab ${idx === 0 ? 'active' : ''} ${isLocked ? 'locked' : ''}" onclick="unlockHintTab(${stageIdx}, ${idx})">
+                        ${tab}
+                    </div>
+                `;
+            }).join('');
+
+            // 첫 번째 힌트 탭 표시
+            updateHintContent(0, stageIdx);
+
+            // 스테이지 뱃지 업데이트
+            document.querySelectorAll('.step-badge').forEach((badge, idx) => {
+                badge.classList.remove('active', 'completed');
+                if (idx === stageIdx) badge.classList.add('active');
+                if (idx < stageIdx) badge.classList.add('completed');
+            });
+
+            // 달성도
+            const checklistContainer = document.getElementById('checklistContainer');
+            checklistContainer.innerHTML = `
+                <div class="checkpoint-item" id="checkpoint-leftright">
+                    <div class="checkpoint-dot">1️⃣</div>
+                    <div class="checkpoint-info">
+                        <h4>좌/우 이동</h4>
+                        <p>화살표 키로 조종</p>
+                    </div>
+                </div>
+                <div class="checkpoint-item" id="checkpoint-obstacle">
+                    <div class="checkpoint-dot">2️⃣</div>
+                    <div class="checkpoint-info">
+                        <h4>장애물 생성</h4>
+                        <p>위에서 내려옴</p>
+                    </div>
+                </div>
+                <div class="checkpoint-item" id="checkpoint-collision">
+                    <div class="checkpoint-dot">3️⃣</div>
+                    <div class="checkpoint-info">
+                        <h4>충돌 감지</h4>
+                        <p>닿으면 게임오버</p>
+                    </div>
+                </div>
+            `;
+
+            // 프리뷰 단계에서는 버튼 숨김
+            const gameButtonContainer = document.getElementById('gameButtonContainer');
+            const gameHint = document.getElementById('gameHint');
+            
+            if (stage.isPreview) {
+                gameButtonContainer.style.display = 'none';
+                gameHint.textContent = 'Preview: 프롬프트 작성의 기초를 배워봐요! 📚';
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                gameInstance = null;
+            } else {
+                gameButtonContainer.style.display = 'flex';
+                gameHint.textContent = '클릭해서 포커스 | ← → 조종! 🎮';
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // 네비게이션 버튼 업데이트
+            updateNavButtons();
+
+            // 체크포인트 리셋
+            completedCheckpoints = { leftright: false, obstacle: false, collision: false };
+        }
+
+        function unlockHintTab(stageIdx, tabIdx) {
+            if (!unlockedHints[stageIdx][tabIdx]) {
+                // 이전 탭이 잠금 해제되었는지 확인
+                let canUnlock = true;
+                for (let i = 0; i < tabIdx; i++) {
+                    if (!unlockedHints[stageIdx][i]) {
+                        canUnlock = false;
+                        break;
+                    }
+                }
+
+                if (!canUnlock) {
+                    addChatMessage('AI', '🔒 이전 단계의 힌트를 먼저 봐야 해! 차근차근 배워보자! 📚');
+                    return;
+                }
+
+                // 잠금 해제
+                unlockedHints[stageIdx][tabIdx] = true;
+                
+                // UI 업데이트
+                const hintTabs = document.querySelectorAll('.hint-tab');
+                hintTabs[tabIdx].classList.remove('locked');
+                
+                addChatMessage('AI', '✨ 좋아! 다음 단계의 힌트를 열었어! 이제 확인해봐! 🎯');
+                updateHintContent(tabIdx, stageIdx);
+            } else {
+                updateHintContent(tabIdx, stageIdx);
+            }
+        }
+
+        function updateHintContent(tabIdx, stageIdx = currentStage) {
+            const stage = stages[stageIdx];
+            const hintContent = document.getElementById('hintContent');
+            const hints = stage.hints[tabIdx];
+            const isLocked = !unlockedHints[stageIdx][tabIdx];
+
+            if (isLocked) {
+                hintContent.innerHTML = `
+                    <div class="hint-locked-overlay">
+                        <div class="hint-locked-content">
+                            <div class="lock-icon">🔒</div>
+                            <p>이 힌트는 아직 잠겨있어요!</p>
+                            <p style="font-size: 10px; color: #6C5CE7; margin-top: 4px;">탭을 클릭해서 해제하세요</p>
+                            <button class="unlock-btn" onclick="unlockHintTab(${stageIdx}, ${tabIdx})">
+                                🔓 해제하기
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                hintContent.innerHTML = `
+                    <div class="space-y-3">
+                        ${hints.steps.map((step, idx) => `
+                            <div class="flex gap-2 text-xs text-gray-300">
+                                <span class="flex-shrink-0 text-[#6C5CE7] font-bold">${idx + 1}.</span>
+                                <span>${step}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            // 탭 활성화
+            document.querySelectorAll('.hint-tab').forEach((tab, idx) => {
+                tab.classList.toggle('active', idx === tabIdx);
+            });
+        }
+
+        window.switchHintTab = function(tabIdx) {
+            updateHintContent(tabIdx);
+        };
+
+        function goToStage(stageIdx) {
+            currentStage = stageIdx;
+            initializeStage(currentStage);
+        }
+
+        function previousStage() {
+            if (currentStage > 0) {
+                currentStage--;
+                initializeStage(currentStage);
+            }
+        }
+
+        function nextStage() {
+            if (currentStage < stages.length - 1) {
+                currentStage++;
+                initializeStage(currentStage);
+            }
+        }
+
+        function updateCheckpoint(checkpointId) {
+            if (completedCheckpoints[checkpointId]) return;
+            
+            completedCheckpoints[checkpointId] = true;
+            const element = document.getElementById(`checkpoint-${checkpointId}`);
+            
+            if (element) {
+                element.classList.add('completed');
+                
+                const stage = stages[currentStage];
+                const allCompleted = ['leftright', 'obstacle', 'collision'].every(id => completedCheckpoints[id]);
+                
+                if (allCompleted && !stage.isPreview) {
+                    setTimeout(() => {
+                        const messages = [
+                            '👏 좋은 프롬프트야! 캐릭터가 화살표 키로 움직이게 됐어!\n\n다음 스테이지에서는 **장애물**을 추가해봅시다! 🔴',
+                            '👏 우와! 장애물이 떨어지고 있어!\n\n다음 스테이지로 넘어가서 **충돌 감지**를 추가해봐! 🎯',
+                            '👏 완벽해! 게임이 완성됐어! 🎉\n\n▶️ 실행 버튼을 누르고 30초 생존 도전해봐!'
+                        ];
+                        addChatMessage('AI', messages[currentStage - 1]);
+                    }, 1000);
+                }
+            }
+        }
+
+        function addChatMessage(sender, text) {
+            const chatHistory = document.getElementById('chatHistory');
+            const div = document.createElement('div');
+            div.className = sender === 'AI' ? 'bubble bubble-ai' : 'bubble bubble-user';
+            
+            if (sender === 'AI') {
+                div.innerHTML = `
+                    <div class="flex items-center gap-2 mb-1">
+                        <i class="fa-solid fa-robot text-[#6C5CE7]"></i> <span class="text-xs font-bold text-[#6C5CE7]">Vibe Tutor</span>
+                    </div>
+                    ${text}
+                `;
+            } else {
+                div.textContent = text;
+            }
+            
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function checkEnter(event) {
+            if (event.key === 'Enter' && event.shiftKey) {
+                event.preventDefault();
+                handleSend();
+            }
+        }
+
+        function handleSend() {
+            const input = document.getElementById('promptInput');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            if (stages[currentStage].isPreview) {
+                addChatMessage('AI', 'Preview 단계에서는 다음으로 진행해서 Stage 1부터 시작해봐요! 😊\n\n"다음 →" 버튼을 눌러봐!');
+                input.value = '';
+                return;
+            }
+
+            addChatMessage('Student', text);
+            input.value = '';
+
+            const hasMovement = /왼쪽|오른쪽|좌우|좌|우|left|right|arrow|화살표|이동|움직|move|캐릭터|플레이어/.test(text.toLowerCase());
+            const hasObstacles = /장애물|떨어|내려|falling|drop|obstacle|enemy|빨간|빨강|생성|내려오/.test(text.toLowerCase());
+            const hasCollision = /충돌|닿|닿으면|collision|hit|game.?over|게임오버|타이머|시간|제한/.test(text.toLowerCase());
+
+            setTimeout(() => {
+                if (currentStage === 1 && hasMovement) {
+                    if (!gameInstance) gameInstance = new GameHero(canvas);
+                    gameInstance.run();
+                    updateCheckpoint('leftright');
+                    addChatMessage('AI', '👏 완벽해! 캐릭터가 화살표 키로 움직이게 됐어!\n\n게임 화면을 클릭하고 ← → 키로 움직여봐! 🎮');
+                } else if (currentStage === 2 && hasObstacles) {
+                    if (!gameInstance) gameInstance = new GameWithObstacles(canvas);
+                    gameInstance.run();
+                    updateCheckpoint('obstacle');
+                    addChatMessage('AI', '👏 오! 장애물이 떨어지고 있어!\n\n다음 스테이지로 넘어가서 충돌 감지를 추가해봐! 🎯');
+                } else if (currentStage === 3 && hasCollision) {
+                    if (!gameInstance) gameInstance = new GameComplete(canvas);
+                    gameInstance.run();
+                    updateCheckpoint('collision');
+                    addChatMessage('AI', '👏 완벽해! 게임이 완성됐어! 🎉\n\n▶️ 실행 버튼을 누르고 30초 생존 도전해봐!');
+                } else {
+                    addChatMessage('AI', `좀 더 구체적으로 말해줄래?\n\n${stages[currentStage].hintTabs.join(', ')} 탭의 힌트를 참고해봐! 💭`);
+                }
+            }, 500);
+        }
+
+        function startGame() {
+            if (gameInstance instanceof GameComplete && !gameInstance.isRunning) {
+                gameInstance.start();
+            } else if (gameInstance && !gameInstance.isRunning) {
+                gameInstance.gameLoop();
+            }
+        }
+
+        function stopGame() {
+            if (gameInstance && gameInstance.isRunning) {
+                gameInstance.stop();
+            }
+        }
+
+        function resetGame() {
+            if (gameInstance) {
+                gameInstance.destroy();
+            }
+            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            gameInstance = null;
+            completedCheckpoints = { leftright: false, obstacle: false, collision: false };
+            
+            // 달성도 리셋
+            document.querySelectorAll('.checkpoint-item').forEach(el => {
+                el.classList.remove('completed');
+            });
+        }
+
+        function saveProgress() {
+            const data = {
+                stage: currentStage,
+                timestamp: new Date().toLocaleString()
+            };
+            localStorage.setItem('vibeCodingProgress', JSON.stringify(data));
+            
+            // 저장 알림
+            const notification = document.createElement('div');
+            notification.className = 'save-notification';
+            notification.innerHTML = '✅ 완료되었습니다! 진행 상황이 저장되었습니다!';
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.remove(), 2000);
+        }
+
+        function goToMyPage() {
+            window.location.href = './mypage.html';
+        }
+
+        function goToHome() {
+            if (confirm('정말로 나가시겠습니까? 진행 상황을 저장하시겠습니까?')) {
+                saveProgress();
+                setTimeout(() => {
+                    window.location.href = './index.html';
+                }, 500);
+            }
+        }
+
+        // 초기화
+        initializeStage(currentStage);
+    </script>
+</body>
+</html>
